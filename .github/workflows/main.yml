@@ -1,0 +1,49 @@
+name: Android APK Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_apk:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install npm dependencies
+      run: npm install
+      working-directory: nanbites
+
+    - name: Create .env file
+      run: |
+        echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> .env
+        echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> .env
+        echo "GOOGLE_WEB_CLIENT_ID=${{ secrets.GOOGLE_WEB_CLIENT_ID }}" >> .env
+        echo "GOOGLE_ANDROID_CLIENT_ID=${{ secrets.GOOGLE_ANDROID_CLIENT_ID }}" >> .env
+        echo "GOOGLE_IOS_CLIENT_ID=${{ secrets.GOOGLE_IOS_CLIENT_ID }}" >> .env
+        echo "STRIPE_PUBLISHABLE_KEY=${{ secrets.STRIPE_PUBLISHABLE_KEY }}" >> .env
+        echo "MAPBOX_ACCESS_TOKEN=${{ secrets.MAPBOX_ACCESS_TOKEN }}" >> .env
+        echo "FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }}" >> .env
+        echo "API_BASE_URL=${{ secrets.API_BASE_URL }}" >> .env
+      working-directory: nanbites
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x android/gradlew
+      working-directory: nanbites
+
+    - name: Build Android Debug APK
+      run: | 
+        cd android && ./gradlew assembleDebug --no-daemon
+      working-directory: nanbites
+
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: nanbites-apk
+        path: nanbites/android/app/build/outputs/apk/debug/app-debug.apk
